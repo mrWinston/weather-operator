@@ -1,4 +1,4 @@
-# Build the manager binary
+FROM quay.io/app-sre/boilerplate:image-v2.1.0 AS builder
 FROM golang:1.13 as builder
 
 WORKDIR /workspace
