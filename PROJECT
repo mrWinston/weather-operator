@@ -1,7 +1,19 @@
-domain: mrWinston.github.io
-layout: go.kubebuilder.io/v2
+domain: mrwinston.github.io
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
 projectName: weather-operator
 repo: github.com/mrWinston/weather-operator
-version: 3-alpha
-plugins:
-  go.sdk.operatorframework.io/v2-alpha: {}
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: mrwinston.github.io
+  group: weather
+  kind: WeatherReport
+  path: github.com/mrWinston/weather-operator/api/v1alpha1
+  version: v1alpha1
+version: "3"

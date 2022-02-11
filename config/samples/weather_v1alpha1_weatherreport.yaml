@@ -1,0 +1,6 @@
+apiVersion: weather.mrwinston.github.io/v1alpha1
+kind: WeatherReport
+metadata:
+  name: weatherreport-sample
+spec:
+  # TODO(user): Add fields here
