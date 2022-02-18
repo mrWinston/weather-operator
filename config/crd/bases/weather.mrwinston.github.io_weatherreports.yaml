@@ -35,13 +35,42 @@ spec:
           spec:
             description: WeatherReportSpec defines the desired state of WeatherReport
             properties:
-              foo:
-                description: Foo is an example field of WeatherReport. Edit weatherreport_types.go
-                  to remove/update
+              language:
+                default: en
+                maxLength: 2
+                minLength: 2
                 type: string
+              location:
+                type: string
+              units:
+                default: standard
+                enum:
+                - standard
+                - metric
+                - imperial
+                type: string
+            required:
+            - location
             type: object
           status:
             description: WeatherReportStatus defines the observed state of WeatherReport
+            properties:
+              description:
+                type: string
+              feels_like:
+                type: string
+              temperature:
+                type: string
+              unit:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                type: string
+            required:
+            - description
+            - feels_like
+            - temperature
+            - unit
             type: object
         type: object
     served: true

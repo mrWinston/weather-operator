@@ -28,14 +28,26 @@ type WeatherReportSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of WeatherReport. Edit weatherreport_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Location string `json:"location"`
+	// +kubebuilder:default:=standard
+	Units Unit `json:"units,omitempty"`
+	// +kubebuilder:default:=en
+	// +kubebuilder:validation:MaxLength=2
+	// +kubebuilder:validation:MinLength=2
+	Language string `json:"language,omitempty"`
 }
+
+// +kubebuilder:validation:Enum=standard;metric;imperial
+type Unit string
 
 // WeatherReportStatus defines the observed state of WeatherReport
 type WeatherReportStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Unit        string `json:"unit"`
+	Temperature string `json:"temperature"`
+	FeelsLike   string `json:"feels_like"`
+	Description string `json:"description"`
 }
 
 //+kubebuilder:object:root=true
