@@ -15,7 +15,10 @@ RUN curl -LO $OPERATOR_SDK_DL_URL/operator-sdk_linux_amd64 && \
     gpg -u "Operator SDK (release) <cncf-operator-sdk@cncf.io>" --verify checksums.txt.asc && \
     grep operator-sdk_${OS}_${ARCH} checksums.txt | sha256sum -c - && \
     chmod +x operator-sdk_${OS}_${ARCH} && \
-    mv operator-sdk_${OS}_${ARCH} /bin/operator-sdk
+    mv operator-sdk_${OS}_${ARCH} /bin/operator-sdk && \
+    ln -s /usr/bin/podman /usr/bin/docker
+
+RUN dnf install -y golang
 
 WORKDIR /work
 
@@ -23,6 +26,6 @@ RUN rm -rf /workdir
 
 USER podman
 
-ENTRYPOINT operator-sdk
+ENTRYPOINT ["operator-sdk"]
     
 
