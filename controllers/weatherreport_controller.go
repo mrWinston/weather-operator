@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright 2023.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -25,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	weatherv1alpha1 "github.com/mrWinston/weather-operator/api/v1alpha1"
+	"github.com/mrWinston/weather-operator/pkg/weather"
 )
 
 // WeatherReportReconciler reconciles a WeatherReport object
@@ -45,11 +48,78 @@ type WeatherReportReconciler struct {
 // the user.
 //
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *WeatherReportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	reqLogger := log.FromContext(ctx)
 
 	// TODO(user): your logic here
+	report := &weatherv1alpha1.WeatherReport{}
+	err := r.Client.Get(ctx, req.NamespacedName, report)
+
+	if err != nil {
+		reqLogger.Error(err, "Can't retrieve WeatherReport CR")
+		return ctrl.Result{
+			RequeueAfter: 5 * time.Minute,
+		}, err
+	}
+
+	lat, lon, err := weather.NameToLocation(report.Spec.Location)
+
+	if err != nil {
+		reqLogger.Error(err, "Can not find location")
+		report.Status.State = weatherv1alpha1.WEATHER_REPORT_STATE_FAILED
+		updErr := r.Client.Update(ctx, report)
+		if updErr != nil {
+			reqLogger.Error(updErr, "ErrorUpdating Status")
+			return ctrl.Result{
+				RequeueAfter: 5 * time.Minute,
+			}, updErr
+		}
+		return ctrl.Result{
+			RequeueAfter: 5 * time.Minute,
+		}, nil
+	}
+
+	weatherInput := &weather.WeatherInput{
+		Latitude:  lat,
+		Longitude: lon,
+		Current: []string{
+			weather.WEATHER_VAR_CURRENT_RELATIVEHUMIDITY_2M,
+			weather.WEATHER_VAR_CURRENT_WINDDIRECTION_10M,
+			weather.WEATHER_VAR_CURRENT_WINDSPEED_10M,
+			weather.WEATHER_VAR_CURRENT_TEMPERATURE_2M,
+			weather.WEATHER_VAR_CURRENT_APPARENT_TEMPERATURE,
+		},
+	}
+
+	wo, err := weather.GetWeatherReport(weatherInput)
+	if err != nil {
+		reqLogger.Error(err, "Error getting Report")
+		report.Status.State = weatherv1alpha1.WEATHER_REPORT_STATE_FAILED
+		updErr := r.Status().Update(ctx, report)
+		if updErr != nil {
+			reqLogger.Error(updErr, "ErrorUpdating Status")
+			return ctrl.Result{
+				RequeueAfter: 5 * time.Minute,
+			}, updErr
+		}
+		return ctrl.Result{
+			RequeueAfter: 5 * time.Minute,
+		}, nil
+	}
+
+	reqLogger.Info("Got requested Report", "fullReport", wo)
+	report.Status.Temperature = fmt.Sprintf("%g", wo.Current.Values[weather.WEATHER_VAR_CURRENT_TEMPERATURE_2M][0])
+	report.Status.FeelsLike = fmt.Sprintf("%g", wo.Current.Values[weather.WEATHER_VAR_CURRENT_APPARENT_TEMPERATURE][0])
+	report.Status.Windspeed = fmt.Sprintf("%g", wo.Current.Values[weather.WEATHER_VAR_CURRENT_WINDSPEED_10M][0])
+	report.Status.Winddirection = fmt.Sprintf("%g", wo.Current.Values[weather.WEATHER_VAR_CURRENT_WINDDIRECTION_10M][0])
+	report.Status.RelativeHumidity = fmt.Sprintf("%g", wo.Current.Values[weather.WEATHER_VAR_CURRENT_RELATIVEHUMIDITY_2M][0])
+	report.Status.State = weatherv1alpha1.WEATHER_REPORT_STATE_SUCCESS
+	updErr := r.Status().Update(ctx, report)
+	if updErr != nil {
+		reqLogger.Error(updErr, "ErrorUpdating Status")
+		return ctrl.Result{}, updErr
+	}
 
 	return ctrl.Result{}, nil
 }

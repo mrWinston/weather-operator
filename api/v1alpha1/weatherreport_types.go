@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright 2023.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,6 +20,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	WEATHER_REPORT_STATE_FAILED  = "Failed"
+	WEATHER_REPORT_STATE_SUCCESS = "Succeess"
+)
+
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
@@ -31,27 +36,32 @@ type WeatherReportSpec struct {
 	Location string `json:"location"`
 	// +kubebuilder:default:=standard
 	Units Unit `json:"units,omitempty"`
-	// +kubebuilder:default:=en
-	// +kubebuilder:validation:MaxLength=2
-	// +kubebuilder:validation:MinLength=2
-	Language string `json:"language,omitempty"`
 }
-
-// +kubebuilder:validation:Enum=standard;metric;imperial
-type Unit string
 
 // WeatherReportStatus defines the observed state of WeatherReport
 type WeatherReportStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Unit        string `json:"unit"`
-	Temperature string `json:"temperature"`
-	FeelsLike   string `json:"feels_like"`
-	Description string `json:"description"`
+	Unit             string `json:"unit"`
+	Temperature      string `json:"temperature"`
+	FeelsLike        string `json:"feels_like"`
+	RelativeHumidity string `json:"relative_humidity"`
+	Windspeed        string `json:"windspeed"`
+	Winddirection    string `json:"winddirection"`
+	State            string `json:"state"`
 }
+
+// +kubebuilder:validation:Enum=standard;metric;imperial
+type Unit string
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="State",type="string",JSONPath=".status.state",description="Status the Report"
+// +kubebuilder:printcolumn:name="Temperature",type="string",JSONPath=".status.temperature",description="Temperature"
+// +kubebuilder:printcolumn:name="FeelsLike",type="string",JSONPath=".status.feels_like",description="Temperature"
+// +kubebuilder:printcolumn:name="Humidity",type="string",JSONPath=".status.relative_humidity",description="Temperature"
+// +kubebuilder:printcolumn:name="Windspeed",type="string",JSONPath=".status.windspeed",description="Temperature"
+// +kubebuilder:printcolumn:name="Winddirection",type="string",JSONPath=".status.winddirection",description="Temperature"
 
 // WeatherReport is the Schema for the weatherreports API
 type WeatherReport struct {

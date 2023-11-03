@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright 2023.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1alpha1 contains API Schema definitions for the weather v1alpha1 API group
-//+kubebuilder:object:generate=true
-//+groupName=weather.mrwinston.github.io
+// +kubebuilder:object:generate=true
+// +groupName=weather.mrwinston.github.io
 package v1alpha1
 
 import (
