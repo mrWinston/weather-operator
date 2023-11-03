@@ -21,9 +21,13 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	weatherv1alpha1 "github.com/mrWinston/weather-operator/api/v1alpha1"
@@ -58,9 +62,7 @@ func (r *WeatherReportReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	if err != nil {
 		reqLogger.Error(err, "Can't retrieve WeatherReport CR")
-		return ctrl.Result{
-			RequeueAfter: 5 * time.Minute,
-		}, err
+		return ctrl.Result{}, err
 	}
 
 	lat, lon, err := weather.NameToLocation(report.Spec.Location)
@@ -71,13 +73,9 @@ func (r *WeatherReportReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		updErr := r.Client.Update(ctx, report)
 		if updErr != nil {
 			reqLogger.Error(updErr, "ErrorUpdating Status")
-			return ctrl.Result{
-				RequeueAfter: 5 * time.Minute,
-			}, updErr
+			return ctrl.Result{}, updErr
 		}
-		return ctrl.Result{
-			RequeueAfter: 5 * time.Minute,
-		}, nil
+		return ctrl.Result{}, err
 	}
 
 	weatherInput := &weather.WeatherInput{
@@ -99,13 +97,9 @@ func (r *WeatherReportReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		updErr := r.Status().Update(ctx, report)
 		if updErr != nil {
 			reqLogger.Error(updErr, "ErrorUpdating Status")
-			return ctrl.Result{
-				RequeueAfter: 5 * time.Minute,
-			}, updErr
+			return ctrl.Result{}, updErr
 		}
-		return ctrl.Result{
-			RequeueAfter: 5 * time.Minute,
-		}, nil
+		return ctrl.Result{}, err
 	}
 
 	reqLogger.Info("Got requested Report", "fullReport", wo)
@@ -126,7 +120,11 @@ func (r *WeatherReportReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *WeatherReportReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	rl := workqueue.NewItemExponentialFailureRateLimiter(5*time.Second, 10*time.Minute)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&weatherv1alpha1.WeatherReport{}).
+		WithOptions(controller.Options{
+			RateLimiter: rl,
+		}).
 		Complete(r)
 }

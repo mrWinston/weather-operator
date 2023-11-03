@@ -49,6 +49,7 @@ type WeatherReportStatus struct {
 	Windspeed        string `json:"windspeed"`
 	Winddirection    string `json:"winddirection"`
 	State            string `json:"state"`
+  Conditions []metav1.Condition `json:"condition"`
 }
 
 // +kubebuilder:validation:Enum=standard;metric;imperial
